@@ -6,8 +6,8 @@ services:
     hostname: text2light
     container_name: text2light
     privileged: true
-    ports:
-      - "6006:6006"
+#    ports:
+#      - "6006:6006"
     stdin_open: true 
     tty: true
     shm_size: '2gb'
