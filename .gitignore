@@ -5,5 +5,8 @@ vgg.pth
 *.jpeg
 *.jpg
 data/*
+matches
+matches.txt
+outdoorPanosExr
 generated_panorama
 text2light_released_model

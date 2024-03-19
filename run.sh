@@ -8,7 +8,11 @@
 CKPTS_DIR="./text2light_released_model"
 
 # HDR
-echo "Have you called \"conda activate text2light\"?"
+echo "Have you create the conda environment?"
+echo "conda init bash"
+echo "conda env create -f environment.yml"
+echo "conda activate text2light"
+
 
 while IFS= read -r line
 do

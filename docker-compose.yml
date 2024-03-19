@@ -8,11 +8,12 @@ services:
     privileged: true
 #    ports:
 #      - "6006:6006"
-    stdin_open: true 
+    stdin_open: true
     tty: true
     shm_size: '2gb'
     volumes:
       - .:/workspace
+      - /home-local2/iamaq.extra.nobkp/datasets/outdoorPanosExr:/workspace/outdoorPanosExr
     deploy:
       resources:
         reservations:
