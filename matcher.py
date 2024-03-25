@@ -3,6 +3,9 @@ import shutil
 from glob import glob
 from pathlib import Path
 
+# Custom
+from .tools import *
+
 shutil.rmtree("matches", ignore_errors=True)
 os.makedirs("matches", exist_ok=True)
 if os.path.exists("matches.txt"):
@@ -40,8 +43,7 @@ paths_generated_panoramas = glob(regex_generated_panoramas)
 # paths_generated_panoramas = paths_generated_panoramas[:10]
 print(f"Found {len(paths_generated_panoramas)} generated panoramas")
 
-# regex_outdoorPanos = 'outdoorPanosExr/*.exr'
-regex_outdoorPanos = 'outdoorPanosEx/*.exr' #typo
+regex_outdoorPanos = 'outdoorPanosExr/*.exr'
 # regex_outdoorPanos = 'generated_panorama/ldr/ldr_*.png'
 paths_outdoorPanos = glob(regex_outdoorPanos)
 # paths_outdoorPanos = paths_outdoorPanos[:10]
@@ -80,6 +82,11 @@ index_params= dict(
 search_params = dict(checks=50) # or pass empty dictionary
 flann = cv2.FlannBasedMatcher(index_params,search_params)
 
+
+# Brute Force
+bf = cv2.BFMatcher()
+
+
 def get_keypoints_descriptors(p_img):
     # find the keypoints and descriptors with ORB
     img = load_image(p_img)
@@ -98,30 +105,29 @@ for p_outdoor in paths_outdoorPanos:
 # Find matches
 thresh_matches = 5
 min_num_nearest_neighbors = 2
-for p_outdoor in paths_outdoorPanos:
-    best_match_count=10
+for p_generated in paths_generated_panoramas:
+    best_match_count=0
     best_match = None
     print("Querying match for: ", p_generated)
-    # des1 = dict_generated_panoramas[p_generated]["des"]
-    des1 = dict_outdoor_panoramas[p_outdoor]["des"]
+    des1 = dict_generated_panoramas[p_generated]["des"]
     if des1 is not None and len(des1)>= min_num_nearest_neighbors:
-        for p_generated in paths_generated_panoramas:
-            # des2 = dict_outdoor_panoramas[p_outdoor]["des"]
-            des2 = dict_generated_panoramas[p_generated]["des"]
+        for p_outdoor in paths_outdoorPanos:
+            des2 = dict_outdoor_panoramas[p_outdoor]["des"]
             if des2 is not None and len(des2) >= min_num_nearest_neighbors:
                 # Get matches
-                matches = flann.knnMatch(des1, des2,k=2)
+                # matches = flann.knnMatch(des1, des2,k=min_num_nearest_neighbors)
+                matches = bf.knnMatch(des1, des2,k=min_num_nearest_neighbors)
 
                 # Need to draw only good matches, so create a mask
-                matchesMask = [[0,0] for i in range(len(matches))]
+                goodMatches = []
 
                 if len(matches) >= thresh_matches:
                     count=0
                     for i,d in enumerate(matches):
-                        if isinstance(d, list) and len(d) >= 2:
+                        if isinstance(d, list) and len(d) == min_num_nearest_neighbors:
                             m,n = d
                             if m.distance < 0.7*n.distance:
-                                matchesMask[i]=[1,0]
+                                goodMatches.append([m])
                                 count += 1
                     if count > best_match_count:
                         print(f"\tNew best match (count={count})")
@@ -134,21 +140,20 @@ for p_outdoor in paths_outdoorPanos:
             kp1, des1 = orb.detectAndCompute(img1,None)
             img2 = load_image(best_match)
             kp2, des2 = orb.detectAndCompute(img2,None)
-            matches = flann.knnMatch(des1,des2,k=2)
-            matchesMask = [[0,0] for i in range(len(matches))]
+            matches = flann.knnMatch(des1,des2,k=min_num_nearest_neighbors)
+            goodMatches = []
             for i,d in enumerate(matches):
-                if isinstance(d, list) and len(d) >= 2:
+                if isinstance(d, list) and len(d) == min_num_nearest_neighbors:
                     m,n = d
                     if m.distance < 0.7*n.distance:
-                        matchesMask[i]=[1,0]
+                        goodMatches.append([m])
 
             draw_params = dict(
                 matchColor = (0,255,0),
                 singlePointColor = (255,0,0),
-                matchesMask = matchesMask,
                 flags = cv2.DrawMatchesFlags_DEFAULT
             )
-            img3 = cv2.drawMatchesKnn(img1,kp1,img2,kp2,matches,None,**draw_params)
+            img3 = cv2.drawMatchesKnn(img1,kp1,img2,kp2,goodMatches,None,**draw_params)
 
             path_out = Path("./matches/") / (Path(p_generated).stem+"_matched_"+Path(best_match).stem+"_.png")
             img3 = cv2.cvtColor(img3, cv2.COLOR_RGB2BGR)

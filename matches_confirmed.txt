@@ -1,3 +1,7 @@
+#TODO
+L1 to find matching queries
+L1 to find outdoor dataset matches
+
 hrldr_[white and red boat on beach during daytime].png
 hrldr_[2 boat at lake during daytime].png
 9C4A6954 Panorama_hdr.exr
@@ -23,8 +27,14 @@ ESSENTIALLY SAME AS
 hrldr_[white concrete castle surrounded by green trees under white clouds and blue sky during daytime].png
 9C4A3874 Panorama_hdr.exr
 
+hrldr_[green leaves tree under blue sky during golden hour].png
+hrldr_[orange petaled flowers near green trees at daytime].png
+hrldr_[green leafed plants during daytime].png
+hrldr_[green and white leafed plants].png
 hrldr_[green-leafed trees near mountain at daytime].png
+hrldr_[closeup photo of green leafed plants].png
 hrldr_[brown tree trunks lot].png
+hrldr_[purple petaled flower].png
 9C4A7199 Panorama_hdr.exr
 
 hrldr_[comulus clouds].png
@@ -45,7 +55,7 @@ hrldr_[green leaf].png
 ??
 
 hrldr_[grey concrete arch].png
-outdoorPanosEx/9C4A9711 Panorama_hdr.exr
+9C4A9711 Panorama_hdr.exr
 
 hrldr_[lake under blue sky during daytime].png
 9C4A7633 Panorama_hdr.exr
@@ -63,4 +73,10 @@ hrldr_[view of gray building near body of water].png
 9C4A6149 Panorama_hdr.exr
 
 hrldr_[white and gray metal building near brown rocks under white clouds during daytime].png
-outdoorPanosEx/9C4A3832 Panorama_hdr.exr
+9C4A3832 Panorama_hdr.exr
+
+hrldr_[white clouds during daytime].png
+9C4A0349 Panorama_hdr.exr
+
+hrldr_[green trees under cloudy sky during daytime].png
+9C4A5050 Panorama_hdr.exr
