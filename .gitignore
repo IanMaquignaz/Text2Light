@@ -6,6 +6,7 @@ vgg.pth
 *.jpg
 data/*
 matches
+matches_confirmed
 matches.txt
 outdoorPanosExr
 generated_panorama

@@ -1,0 +1,6 @@
+[submodule "libs/research-utils"]
+	path = libs/research-utils
+	url = git@github.com:IanMaquignaz/research-utils.git
+[submodule "libs/skylibs"]
+	path = libs/skylibs
+	url = git@github.com:IanMaquignaz/skylibs.git

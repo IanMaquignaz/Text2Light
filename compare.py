@@ -16,7 +16,7 @@ import torch
 from torchvision.transforms import ToTensor
 from torchmetrics.image.lpip import LearnedPerceptualImagePatchSimilarity
 toTensor = ToTensor()
-lpips = LearnedPerceptualImagePatchSimilarity(net_type='vgg', normalize=True)
+lpips = LearnedPerceptualImagePatchSimilarity(net_type='vgg', normalize=True).cuda()
 
 # Custom
 from tools import load_image, save_image
@@ -87,34 +87,39 @@ for p_ref in tqdm(PATHS_panos_generated):
     print(p_ref)
     ref=load_image(p_ref)
     ref=match_shape(ref,ref)
+    ref=toTensor(ref).unsqueeze(axis=0).float()
+
 
     best_match_loss = 999999
     best_match_path = None
-    for p_a in PATHS_panos_outdoor:
+    for p_a in tqdm(PATHS_panos_outdoor):
         if p_a not in cache.keys():
             a=load_image(p_a)
             a=match_shape(ref,a)
-            cache[p_a]=a.copy()
+            a=toTensor(a).unsqueeze(axis=0).float()
+            cache[p_a]=a.clone()
         else:
-            a=cache[p_a].copy()
+            a=cache[p_a].clone()
+
+        # Fix exposure
         a=match_exposure(ref,a)
 
-        a_ = toTensor(a).unsqueeze(axis=0).float().cuda()
-        ref_ = toTensor(ref).unsqueeze(axis=0).float().cuda()
-        loss=0
-        loss+=lpips(a_,ref_)
-        # loss += SIL(ref,a)
-        # loss += (1-PSNR(ref, a, data_range=1)/32)*.10
-        # loss = MSE(ref,a)
+        # compute loss
+        a_ = a.to(lpips.device)
+        ref_ = ref.to(lpips.device)
+        loss=lpips(a_,ref_)
         if loss < best_match_loss:
             best_match_loss = loss
             best_match_path = p_a
-        print('\t', p_a, ' :: ', loss)
+        # print('\t', p_a, ' :: ', loss)
 
 
     # Save match
     print('Done! ', p_ref, '--> ', best_match_path, ' :: ', best_match_loss)
-    a=cache[best_match_path]
+    ref=load_image(p_ref)
+    ref=match_shape(ref,ref)
+    a=load_image(best_match_path)
+    a=match_shape(ref,a)
     a=match_exposure(ref,a)
     best_img=np.concatenate((ref, a), axis=0)
     po_a = Path(best_match_path).stem.replace(' Panorama_hdr', '')

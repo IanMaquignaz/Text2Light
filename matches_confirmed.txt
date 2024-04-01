@@ -1,7 +1,3 @@
-#TODO
-L1 to find matching queries
-L1 to find outdoor dataset matches
-
 hrldr_[white and red boat on beach during daytime].png
 hrldr_[2 boat at lake during daytime].png
 9C4A6954 Panorama_hdr.exr
@@ -24,6 +20,7 @@ hrldr_[green grass field and trees].png
 hrldr_[pine trees on green grass].png
 9C4A3916 Panorama_hdr.exr
 ESSENTIALLY SAME AS
+hrldr_[green grass field during daytime].png -- MAYBE?
 hrldr_[white concrete castle surrounded by green trees under white clouds and blue sky during daytime].png
 9C4A3874 Panorama_hdr.exr
 
@@ -51,9 +48,6 @@ hrldr_[aerial photo of trees].png
 hrldr_[photography of tree].png
 9C4A6345 Panorama_hdr.exr
 
-hrldr_[green leaf].png
-??
-
 hrldr_[grey concrete arch].png
 9C4A9711 Panorama_hdr.exr
 
@@ -80,3 +74,78 @@ hrldr_[white clouds during daytime].png
 
 hrldr_[green trees under cloudy sky during daytime].png
 9C4A5050 Panorama_hdr.exr
+
+
+'9C4A0880_[brown house near body of water].jpeg'
+'9C4A1322_[CN tower during daytime].jpeg'
+'9C4A3692_[landscape photo of buildings].jpeg'
+'9C4A3916_[brown grass near green trees during daytime].jpeg'
+'9C4A3916_[green grass field and trees].jpeg'
+'9C4A3916_[green grass field during daytime].jpeg'
+'9C4A3916_[green grass hill with trees].jpeg'
+'9C4A3916_[pine trees on green grass].jpeg'
+'9C4A3916_[white house near trees during daytime].jpeg'
+'9C4A4042_[green-leafed trees during daytime].jpeg'
+'9C4A4042_[green tree near red house during daytime].jpeg'
+'9C4A4042_[green trees during daytime].jpeg'
+'9C4A4560_[grayscale photo of mountains].jpeg'
+'9C4A4700_[aerial view of green trees and river during daytime].jpeg'
+'9C4A4700_[brown wooden bench beside tree].jpeg'
+'9C4A4700_[green and brown tree during daytime].jpeg'
+'9C4A4700_[green leafed trees during daytime].jpeg'
+'9C4A4700_[green leafed trees].jpeg'
+'9C4A4700_[green-leafed trees].jpeg'
+'9C4A4700_[green leaves].jpeg'
+'9C4A4700_[green pine trees near teal water at daytime].jpeg'
+'9C4A4700_[green trees].jpeg'
+'9C4A4700_[green trees near lake under white sky during daytime].jpeg'
+'9C4A4700_[green trees on brown grass field during daytime].jpeg'
+'9C4A4700_[low-angle photography of green leaf trees at daytime].jpeg'
+'9C4A4784_[photo of gray wooden bridge].jpeg'
+'9C4A4882_[green lake near mountain under blue sky during daytime].jpeg'
+'9C4A4882_[green tree on grass field].jpeg'
+'9C4A4882_[lush grass field photo during golden hour].jpeg'
+'9C4A4882_[pine trees near lake].jpeg'
+'9C4A5050_[green trees under cloudy sky during daytime].jpeg'
+'9C4A5421_[green-colored lakes].jpeg'
+'9C4A5421_[green-leafed trees surrounded by body of water during daytime].jpeg'
+'9C4A5421_[green trees covering with fog during daytime].jpeg'
+'9C4A5939_[village under cloudy sky during daytime].jpeg'
+'9C4A6191_[Sign Post, Arrow Sign, Direction Sign].jpeg'
+'9C4A6191_[view of gray building near body of water].jpeg'
+'9C4A6345_[A a carton of Boxed Water in their hand in front of El Capitan in Yosemite].jpeg'
+'9C4A6345_[aerial photo of trees].jpeg'
+'9C4A6345_[forest during golden hour time].jpeg'
+'9C4A6345_[landscape photo of waterfalls flowing into river during daytime].jpeg'
+'9C4A6345_[large tree in middle of forest during daytime].jpeg'
+'9C4A6345_[Owl, Bird, Animal, Bird Of Prey].jpeg'
+'9C4A6345_[photography of tree].jpeg'
+'9C4A6345_[river surrounded by pine trees].jpeg'
+'9C4A6345_[Splashing, Splash, Aqua, Water, Pouring].jpeg'
+'9C4A6772_[black rock formation on body of water].jpeg'
+'9C4A6772_[cone mountain with the distance of body of water].jpeg'
+'9C4A6954_[2 boat at lake during daytime].jpeg'
+'9C4A6954_[four brown wooden boat near dock].jpeg'
+'9C4A6954_[white and red boat on beach during daytime].jpeg'
+'9C4A7115_[aerial view of green grass field during daytime].jpeg'
+'9C4A7115_[white wooden tree surround by grass field during sunset].jpeg'
+'9C4A7199_[brown tree trunks lot].jpeg'
+'9C4A7199_[closeup photo of green leafed plants].jpeg'
+'9C4A7199_[green and white leafed plants].jpeg'
+'9C4A7199_[green leafed plants during daytime].jpeg'
+'9C4A7199_[green-leafed trees near mountain at daytime].jpeg'
+'9C4A7199_[green leaves tree under blue sky during golden hour].jpeg'
+'9C4A7199_[orange petaled flowers near green trees at daytime].jpeg'
+'9C4A7199_[purple petaled flower].jpeg'
+'9C4A7500_[multicolored canoes moored in dock in lake].jpeg'
+'9C4A7633_[lake under blue sky during daytime].jpeg'
+'9C4A8473_[golden hour photography of docking pier on body of water].jpeg'
+'9C4A9109_[green leaf].jpeg'
+'9C4A9410_[houses surrounded by trees beside body ofw ater].jpeg'
+'9C4A9515_[brown deer under tree].jpeg'
+'9C4A9515_[ocean near green trees during daytime].jpeg'
+'9C4A9515_[Relaxing Rest Under The Tree].jpeg'
+'9C4A9711_[grey concrete arch].jpeg'
+
+# Missing LDR???
+[CN tower during daytime];9C4A1322
