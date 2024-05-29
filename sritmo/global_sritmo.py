@@ -83,11 +83,11 @@ class SRToneMapper(nn.Module):
         hr_hdr, _ = self.hdrmapper(input2hdrmapper)
 
         return hr_ldr, hr_hdr
-    
+
     def gen_feat(self, img):
         self.feat = self.ldr_encoder(img)
         return self.feat
-    
+
     def query(self, glb_coord, coord, cell=None):
         feat = self.feat
         feat = F.unfold(feat, 3, padding=1).view(
@@ -170,6 +170,8 @@ def SRiTMO(ldr_samples: torch.Tensor, params: dict):
     # TODO: normalize ldr_samples?
     bs, channels, height, width = ldr_samples.shape
     ldr_samples = ldr_samples[:, [2, 1, 0], :, :] # RGB2BGR, the stage II model is trained on BGR format
+    ldr_input_samples = ldr_samples.detach().clone()
+
     height = int(height * sr_factor)
     width = int(width * sr_factor)
     xx, yy = np.meshgrid(np.linspace(0, 1, width), np.linspace(0, 1, height))
@@ -181,10 +183,13 @@ def SRiTMO(ldr_samples: torch.Tensor, params: dict):
     cell = torch.ones_like(coord)
     cell[:, 0] *= 2 / height
     cell[:, 1] *= 2 / width
+
     hr_output, hdr_output = batchify(model, ldr_samples, glb_coords.repeat(bs, 1, 1), coord.repeat(bs, 1, 1), cell.repeat(bs, 1, 1), bsize=30000)
 
     hr_output = hr_output.reshape(bs, height, width, channels).permute(0, 3, 1, 2)
     hdr_output = hdr_output.reshape(bs, height, width, channels).permute(0, 3, 1, 2)
+
+    hdr_output_SRiTMO = hdr_output.detach().clone()
 
     gamma = 1
     boost = 4
@@ -192,7 +197,6 @@ def SRiTMO(ldr_samples: torch.Tensor, params: dict):
     luma = torch.mean(hdr_output, dim=1, keepdim=True)
     mask = torch.clip(luma / luma.max() - 0.83, 0, 1)
     hdr_output += hdr_output * mask * boost
-
     hdr_output = torch.exp((hdr_output - hdr_output.mean()) * gamma - balance)
 
-    return hr_output, hdr_output
+    return ldr_input_samples, hr_output, hdr_output_SRiTMO, hdr_output

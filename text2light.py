@@ -138,14 +138,21 @@ def text2light(models: dict, prompts, outdir, params: dict):
 
     # super-resolution inverse tone mapping
     if params['sritmo'] is not None:
-        ldr_hr_samples, hdr_hr_samples = SRiTMO(xsample, params)
+        ldr_input_samples, ldr_hr_samples, hdr_SRiTMO_samples, hdr_full_samples = SRiTMO(xsample, params)
     else:
         print("no checkpoint provided, skip Stage II (SR-iTMO)...")
         return
-    
+
+    flags_imwrite_EXR_float32 = [
+        cv2.IMWRITE_EXR_TYPE,
+        cv2.IMWRITE_EXR_TYPE_FLOAT # float32
+    ]
     for i in range(xsample.shape[0]):
         cv2.imwrite(os.path.join(outdir, "ldr", "hrldr_[{}].png".format(prompts[i])), (ldr_hr_samples[i].permute(1, 2, 0).detach().cpu().numpy() + 1) * 127.5)
-        cv2.imwrite(os.path.join(outdir, "hdr", "hdr_[{}].exr".format(prompts[i])), hdr_hr_samples[i].permute(1, 2, 0).detach().cpu().numpy())
+
+        cv2.imwrite(os.path.join(outdir, "hdr", "ldr_input_[{}].exr".format(prompts[i])),           ldr_input_samples[i].permute(1, 2, 0).detach().cpu().numpy(),  flags_imwrite_EXR_float32)
+        cv2.imwrite(os.path.join(outdir, "hdr", "hdr_SRiTMO_[{}].exr".format(prompts[i])),          hdr_SRiTMO_samples[i].permute(1, 2, 0).detach().cpu().numpy(), flags_imwrite_EXR_float32)
+        cv2.imwrite(os.path.join(outdir, "hdr", "hdr_SRiTMO_boosted_[{}].exr".format(prompts[i])),  hdr_full_samples[i].permute(1, 2, 0).detach().cpu().numpy(),   flags_imwrite_EXR_float32)
 
 
 def get_parser():
@@ -292,7 +299,7 @@ if __name__ == "__main__":
     print(ckpt)
     if show_config:
         print(OmegaConf.to_container(config))
-    
+
     global_sampler = load_model(config, ckpt, gpu, eval_mode)
 
     ckpt = None
@@ -321,7 +328,7 @@ if __name__ == "__main__":
     print("Writing samples to ", outdir)
     for k in ["holistic", "ldr", "hdr"]:
         os.makedirs(os.path.join(outdir, k), exist_ok=True)
-    
+
     prompts_file = opt.text
     if os.path.exists(prompts_file):
         # list of prompts for text2light tasks
@@ -336,7 +343,7 @@ if __name__ == "__main__":
         clip_emb = np.load(opt.clip).astype('float32')
     else:
         raise NotImplementedError('The path [{}] to clip embedding is not valid.'.format(opt.clip))
-    
+
     knn_index = faiss.IndexFlatIP(clip_emb.shape[-1])
     knn_index.add(clip_emb)
 
