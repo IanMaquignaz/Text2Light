@@ -37,6 +37,19 @@ def tm_gamma(img, g=2.2, clip=[0,1]):
     return img
 
 
+def tm_logN(img, base=2, selective=False, clip=[0,1]):
+    # log_b (a) = log_k (a) / log_k (b)
+    if selective:
+        t = img
+        t[t > base] = np.log2(t[t > base]+base**base) / np.log2(base)
+    else:
+        t = np.log2(img+1) / np.log2(base)
+    t = np.nan_to_num(t, nan=0, posinf=0, neginf=0)
+    if clip:
+        t = np.clip(t, clip[0], clip[1])
+    return t
+
+
 def save_image(path, img):
     if not path.endswith(".exr"):
         img = img.astype(np.float32)
@@ -46,44 +59,66 @@ def save_image(path, img):
     cv2.imwrite(path, img)
 
 
-def match_shape(ref, a):
+def match_shape(ref, a, format='latlong'):
     # Fix shape
-    e = EnvironmentMap(a, 'latlong')
+    e = EnvironmentMap(a, format)
     if isinstance(ref, np.ndarray):
-        e = e.convertTo('latlong', ref.shape[0])
+        e = e.convertTo(format, ref.shape[0])
     elif isinstance(ref, torch.Tensor):
-        e = e.convertTo('latlong', ref.shape[-2])
+        e = e.convertTo(format, ref.shape[-2])
+    elif isinstance(ref, int):
+        e = e.convertTo(format, ref)
     else:
         raise ValueError("ref must be a numpy array or a torch tensor")
     e.data[-16:,:,:]=0
     return e.data
 
 
+def convert_envmap(img, format_src='latlong', format_dst='latlong', size_dst=None):
+    # Fix shape
+    e = EnvironmentMap(img, format_src)
+    # if size_dst is None:
+    #     size_dst = e.data.shape[0]
+    e = e.convertTo(format_dst, size_dst)
+    return e.data
+
 def exposure(a, exp):
     a*= np.exp2(exp)
     return a
 
-def match_exposure(ref, a, clip=False, offset=1.0):
-    # Fix exposure
-    if isinstance(ref, np.ndarray):
-        ref_g = cv2.cvtColor(ref.astype(np.float32), cv2.COLOR_RGB2GRAY)
-        a_g = cv2.cvtColor(a.astype(np.float32), cv2.COLOR_RGB2GRAY)
-        ratio = ref_g/a_g
+def match_exposure(ref, a):
+    assert ref.shape == a.shape, f"Shapes do not match: {ref.shape} != {a.shape}"
+
+    if ref.ndim == 4:
+        f_shape = ref.shape[1] * ref.shape[2]
+        ref = ref - ref.min()
+        a = a - a.min()
+        ratio = np.reshape(ref / a, (-1, f_shape))
         ratio = np.nan_to_num(ratio, nan=float('nan'), posinf=float('nan'), neginf=float('nan'))
+
+        # # Filter
+        # u = np.nanmean(ratio)
+        # std = np.nanstd(ratio)
+        # ratio[ratio > (u + 2*std)] = np.nan
+        # ratio[ratio < (u - 2*std)] = np.nan
+
+        # Get final Ratio
+        ratio = np.nanmean(ratio, axis=1)
+        ratio = np.repeat(ratio, f_shape).reshape(a.shape)
+    elif ref.ndim == 3:
+        ref = ref - ref.min()
+        a = a - a.min()
+        ratio = (ref / a).flatten()
+        ratio = np.nan_to_num(ratio, nan=float('nan'), posinf=float('nan'), neginf=float('nan'))
+
+        # Get final Ratio
         ratio = np.nanmean(ratio)
-    elif isinstance(ref, torch.Tensor):
-        ref_g = F.rgb_to_grayscale(ref)
-        a_g = F.rgb_to_grayscale(a)
-        ratio = ref_g/a_g
-        ratio = torch.nan_to_num(ratio, nan=float('nan'), posinf=float('nan'), neginf=float('nan'))
-        ratio = ratio.mean()
     else:
-        raise ValueError("ref must be a numpy array or a torch tensor")
-    # print('ratio=', ratio)
-    a = a*(ratio*offset)
-    if clip:
-        a = np.clip(a,0,1)
-    return a
+        raise ValueError("Only 3D and 4D tensors are supported")
+
+    # Apply Ratio
+    a = (a * ratio)
+    return np.nan_to_num(a, nan=0, posinf=0, neginf=0)
 
 
 def L1(a,b):

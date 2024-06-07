@@ -6,8 +6,10 @@ vgg.pth
 *.jpg
 data/*
 matches
+matches_*
 matches_confirmed
-matches.txt
+matches*.txt
 outdoorPanosExr
 generated_panorama*
 text2light_released_model
+*.pkl

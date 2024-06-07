@@ -58,7 +58,8 @@ def load_image(path):
 
     if path.endswith('.exr'):
         img = img * np.power(2, 6)
-        img = np.power(img, 1.0/2.2)
+        # img = np.power(img, 1.0/2.2)
+        img = np.log10(img + 1)
         img = np.clip(img, 0, 1)
         img = (img * 255).astype(np.uint8)
 
