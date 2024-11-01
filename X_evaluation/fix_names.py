@@ -19,10 +19,11 @@ PATH_ROOT = "generated_panorama_run_2"
 regex_generated_panoramas = PATH_ROOT+'/hdr/*'
 paths_generated_panoramas = glob(regex_generated_panoramas)
 purge(paths_generated_panoramas)
+
 regex_generated_panoramas = PATH_ROOT+'/holistic/*'
 paths_generated_panoramas = glob(regex_generated_panoramas)
 purge(paths_generated_panoramas)
 
-regex_generated_panoramas = PATH_ROOT+'PATH_ROOT/ldr/*'
+regex_generated_panoramas = PATH_ROOT+'/ldr/*'
 paths_generated_panoramas = glob(regex_generated_panoramas)
 purge(paths_generated_panoramas)

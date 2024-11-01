@@ -567,4 +567,3 @@
 [worm's-eye view photography of forest]
 [yellow lights between trees]
 [yellow, red, and blue hot air balloon near trees and body of water under blue sky during daytime]
-generated_panorama, generated_panorama, loss (1095 Total)
