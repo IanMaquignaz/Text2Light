@@ -127,8 +127,10 @@ def match_exposure(ref, a):
     assert ref.shape == a.shape, f"Shapes do not match: {ref.shape} != {a.shape}"
     assert ref.ndim == 3 or ref.ndim==2, f"Only 2D and 3D tensors are supported"
 
-    a = a - a.min()
-    ref = ref - ref.min()
+    if a.min() < 0:
+        a = a - a.min()
+    if ref.min() < 0:
+        ref = ref - ref.min()
 
     if ref.ndim == 3:
         a_mean = cv2.cvtColor(a.astype(np.float32), cv2.COLOR_RGB2XYZ)[:,:,1].mean()
