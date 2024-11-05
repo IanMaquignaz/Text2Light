@@ -10,13 +10,14 @@ import matplotlib.pyplot as plt
 # Machine Vision/Learning
 import cv2
 import numpy as np
+import torch
 from torchvision.transforms import ToTensor
 toTensor = ToTensor()
 from torchvision.transforms import functional as F
 from torchvision.utils import make_grid, save_image
 
 # Custom
-from tools import load_image
+from tools import load_image, load_render
 from tools import match_shape, match_exposure
 from tools import tm_gamma, exposure
 # from tools import plot_histogram
@@ -28,8 +29,8 @@ from utils_cv.io.opencv import save_image as cv_save_image, load_image as cv_loa
 PATH_panos_generated = "./generated_panorama_run_2"
 PATH_panos_outdoor = "./outdoorPanosExr"
 PATH_output = "./run_2_matches_confirmed_grid"
-shutil.rmtree(PATH_output, ignore_errors=True)
-os.makedirs(PATH_output, exist_ok=True)
+# shutil.rmtree(PATH_output, ignore_errors=True)
+# os.makedirs(PATH_output, exist_ok=True)
 
 FILE_MATCHES="run_2_matches_confirmed.txt"
 
@@ -224,9 +225,6 @@ for k, v in tqdm(matches.items()):
     img_gt_hdr = match_exposure(img_gn_ldr.copy(), img_gt_hdr)
 
     img_gt_ldr = tm_gamma(img_gt_hdr.copy(), 2.2)
-    # from utils_ml.metrics import EarthMoversDistance as EMD # EMD
-    # emd_LDR = EMD(bins=1000, range=[0,1])
-    # emd_HDR = EMD(bins=1000, range=[0,21000])
 
     images = []
     txt_thickness = 2
@@ -237,11 +235,6 @@ for k, v in tqdm(matches.items()):
         img_gn_ldr = img_gn_ldr[:trim,:,:]
         img_gn_ldr = match_exposure(img_gt_ldr.copy(),img_gn_ldr)
         img_ldr.append(img_gn_ldr.copy())
-
-        # LDR EMD
-        # img_gt_tmp_HDR = match_exposure(img_gt_ldr.copy(), img_gt_hdr.copy())
-        # img_gt_tmp_LDR = tm_gamma(img_gt_tmp_HDR, 2.2)
-        # emd_LDR.update(toTensor(img_gn_ldr).unsqueeze(0),toTensor(img_gt_tmp_LDR).unsqueeze(0))
 
         p_gn_hdr = os.path.join(PATH_panos_generated, 'hdr/hdr_SRiTMO_'+m+'.exr')
         img_gn_hdr = load_image(p_gn_hdr)
@@ -255,41 +248,16 @@ for k, v in tqdm(matches.items()):
         img_gn_hdr = img_gn_hdr[:trim,:,:]
         img_gn_hdr = match_exposure(img_gt_hdr.copy(), img_gn_hdr.copy())
         img_tmo_boosted.append(img_gn_hdr.copy())
-        # emd_HDR.update(toTensor(img_gn_hdr.copy()).unsqueeze(0), toTensor(img_gt_tmp_HDR.copy()).unsqueeze(0))
 
         img_gn_hdr = tm_gamma(img_gn_hdr, 2.2)
         img_gn_hdr = cv2.putText(img_gn_hdr, m, (10, img_gn_hdr.shape[0]-10), cv2.FONT_HERSHEY_TRIPLEX, 1, txt_color, txt_thickness, cv2.FILLED)
         images.append(toTensor(img_gn_hdr))
-
-    # img_gt = match_exposure(img_gn_ldr_, img_gt.copy())
 
     img_gt_ldr = cv2.putText(img_gt_ldr, 'Ground Truth', (10, img_gt_ldr.shape[0]-10), cv2.FONT_HERSHEY_TRIPLEX, 1, txt_color, txt_thickness, cv2.FILLED)
     images.insert(0, toTensor(img_gt_ldr.copy()))
 
     if len(images) % 2 != 0:
         images.append(toTensor(np.ones_like(img_gt_ldr)))
-
-    # print(f"EMD_LDR: {emd_LDR.compute()}")
-    # img_EMD_LDR = emd_LDR.plot_cummulative_histogram_error(
-    #     include_error=False,
-    #     title='LDR Cumulative Intensity',
-    #     shape=(img_gt_ldr.shape[1],img_gt_ldr.shape[0]),
-    # ).numpy().transpose(1,2,0)
-    # img_EMD_LDR = cv2.cvtColor(img_EMD_LDR, cv2.COLOR_RGBA2RGB)
-    # img_EMD_LDR = cv2.resize(img_EMD_LDR, (img_gt_ldr.shape[1], img_gt_ldr.shape[0]))
-    # img_EMD_LDR = cv2.putText(img_EMD_LDR, 'LDR', (10, img_gt_ldr.shape[0]-10), cv2.FONT_HERSHEY_TRIPLEX, 1, txt_color, txt_thickness, cv2.FILLED)
-    # images.append(toTensor(img_EMD_LDR))
-
-    # print(f"EMD_HDR: {emd_HDR.compute()}")
-    # img_EMD_HDR = emd_HDR.plot_cummulative_histogram_error(
-    #     include_error=False,
-    #     title='HDR Cumulative Intensity',
-    #     shape=(img_gt_ldr.shape[1],img_gt_ldr.shape[0])
-    # ).numpy().transpose(1,2,0)
-    # img_EMD_HDR = cv2.cvtColor(img_EMD_HDR, cv2.COLOR_RGBA2RGB)
-    # img_EMD_HDR = cv2.resize(img_EMD_HDR, (img_gt_ldr.shape[1], img_gt_ldr.shape[0]))
-    # img_EMD_HDR = cv2.putText(img_EMD_HDR, 'HDR', (10, img_gt_ldr.shape[0]-10), cv2.FONT_HERSHEY_TRIPLEX, 1, txt_color, txt_thickness, cv2.FILLED)
-    # images.append(toTensor(img_EMD_HDR))
 
     plot = plot_histogram_LDR(
         img_ldr=img_ldr,
@@ -309,5 +277,27 @@ for k, v in tqdm(matches.items()):
     )
     images.append(toTensor(plot))
 
+    # Made image grid
     grid = make_grid(images, nrow=2)
+    print('grid', grid.shape)
+
+    txt_color = (0,0,0)
+    file_gt = f"run_2_matches_confirmed_grid/renders/{k} Panorama_hdr.png"
+    render_gt = load_render(file_gt)
+    render_gt = cv2.resize(render_gt, None, fx=img_gt_ldr.shape[1]/render_gt.shape[1], fy=img_gt_ldr.shape[1]/render_gt.shape[1])
+    render_gt = cv2.putText(render_gt, k, (10, render_gt.shape[0]-10), cv2.FONT_HERSHEY_TRIPLEX, 1, txt_color, txt_thickness, cv2.FILLED)
+    render_gt = toTensor(render_gt)
+
+    file_gn = f"run_2_matches_confirmed_grid/renders/hdr_SRiTMO_boosted_{v[0]}.png"
+    render_gn = load_render(file_gn)
+    render_gn = cv2.resize(render_gn, None, fx=img_gt_ldr.shape[1]/render_gn.shape[1], fy=img_gt_ldr.shape[1]/render_gn.shape[1])
+    render_gn = cv2.putText(render_gn, v[0], (10, render_gn.shape[0]-10), cv2.FONT_HERSHEY_TRIPLEX, 1, txt_color, txt_thickness, cv2.FILLED)
+    render_gn = toTensor(render_gn)
+    render_grid = make_grid([render_gt, render_gn], nrow=2)
+    print('render_grid', render_grid.shape)
+
+    grid = torch.cat([grid, render_grid], dim=1)
+
+    assert grid.min() >= 0.0 and grid.max() <= 255.0, \
+        f"Grid must be in range [0,1], got {grid.min()}, {grid.max()}"
     save_image(grid, os.path.join(PATH_output, k+'_matches.png'))

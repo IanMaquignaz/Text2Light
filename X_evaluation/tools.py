@@ -12,6 +12,14 @@ from torchvision.transforms import functional as F
 from envmap import EnvironmentMap
 
 os.environ["OPENCV_IO_ENABLE_OPENEXR"]="1"
+
+def load_render(path):
+    # load the image
+    img = cv2.imread(path, flags = cv2.IMREAD_COLOR)
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    img = img / 255.0
+    return img
+
 def load_image(path):
     # load the image
     try:
@@ -32,6 +40,13 @@ def load_image(path):
 def tm_gamma(img, g=2.2, clip=[0,1]):
     # Gamma tonemap
     img = np.power(img, 1.0/g)
+    if clip:
+        img = np.clip(img, clip[0], clip[1])
+    return img
+
+def tm_gamma_inverse(img, g=2.2, clip=[0,1]):
+    # Gamma tonemap
+    img = np.power(img, g)
     if clip:
         img = np.clip(img, clip[0], clip[1])
     return img
