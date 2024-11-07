@@ -4,6 +4,7 @@ vgg.pth
 *.png
 *.jpeg
 *.jpg
+*.exr
 data/*
 matches
 matches_*
@@ -13,6 +14,6 @@ outdoorPanosExr
 generated_panorama*
 text2light_released_model
 *.pkl
-run_2_duplicates
+run_2_*
 storage
 blender

@@ -13,6 +13,11 @@ from envmap import EnvironmentMap
 
 os.environ["OPENCV_IO_ENABLE_OPENEXR"]="1"
 
+flags_imread_HDR = (
+    cv2.IMREAD_ANYCOLOR | # The image is read in any possible color format
+    cv2.IMREAD_ANYDEPTH | # Return 16-bit/32-bit image when the input has the corresponding depth
+    cv2.IMREAD_UNCHANGED  # Return the loaded image as is (with alpha channel, otherwise it gets cropped). Ignore EXIF orientation.
+)
 def load_render(path):
     # load the image
     img = cv2.imread(path, flags = cv2.IMREAD_COLOR)
@@ -23,7 +28,7 @@ def load_render(path):
 def load_image(path):
     # load the image
     try:
-        img = cv2.imread(path, flags = cv2.IMREAD_ANYDEPTH | cv2.IMREAD_COLOR)
+        img = cv2.imread(path, flags = flags_imread_HDR)
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     except Exception as e:
         print(f"Error loading {path}: {e}")
@@ -138,7 +143,7 @@ def match_grayscale_exposure(ref, a):
     return np.nan_to_num(a, nan=0, posinf=0, neginf=0)
 
 
-def match_exposure(ref, a):
+def match_exposure(ref, a, trim=None):
     assert ref.shape == a.shape, f"Shapes do not match: {ref.shape} != {a.shape}"
     assert ref.ndim == 3 or ref.ndim==2, f"Only 2D and 3D tensors are supported"
 
@@ -148,8 +153,12 @@ def match_exposure(ref, a):
         ref = ref - ref.min()
 
     if ref.ndim == 3:
-        a_mean = cv2.cvtColor(a.astype(np.float32), cv2.COLOR_RGB2XYZ)[:,:,1].mean()
-        ref_mean = cv2.cvtColor(ref.astype(np.float32), cv2.COLOR_RGB2XYZ)[:,:,1].mean()
+        if trim:
+            a_mean = cv2.cvtColor(a[:trim,:,:].astype(np.float32), cv2.COLOR_RGB2XYZ)[:,:,1].mean()
+            ref_mean = cv2.cvtColor(ref[:trim,:,:].astype(np.float32), cv2.COLOR_RGB2XYZ)[:,:,1].mean()
+        else:
+            a_mean = cv2.cvtColor(a.astype(np.float32), cv2.COLOR_RGB2XYZ)[:,:,1].mean()
+            ref_mean = cv2.cvtColor(ref.astype(np.float32), cv2.COLOR_RGB2XYZ)[:,:,1].mean()
 
         # Get final Ratio
         ratio = np.nan_to_num(
@@ -160,8 +169,12 @@ def match_exposure(ref, a):
         )
         ratio = np.nan_to_num(ratio, nan=1., posinf=1., neginf=1.)
     elif ref.ndim == 2:
-        a_mean = a.mean()
-        ref_mean = ref.mean()
+        if trim:
+            a_mean = a[:trim,:].mean()
+            ref_mean = ref[:trim,:].mean()
+        else:
+            a_mean = a.mean()
+            ref_mean = ref.mean()
 
         # Get final Ratio
         ratio = np.nan_to_num(

@@ -4,3 +4,6 @@
 [submodule "libs/skylibs"]
 	path = libs/skylibs
 	url = git@github.com:IanMaquignaz/skylibs.git
+[submodule "libs/blender-runner"]
+	path = libs/blender-runner
+	url = https://github.com/IanMaquignaz/blender-runner

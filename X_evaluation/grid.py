@@ -134,12 +134,16 @@ def plot_histogram_HDR(
     shape:tuple[int,int]=(2048,1024),
     dpi:float=180,
 ):
+    assert len(img_tmo) == len(img_tmo_boosted), \
+            f"All lists must have the same length, got {len(img_ldr)}, {len(img_tmo)}, {len(img_tmo_boosted)}"
+    count = len(img_tmo)
+
     img_tmo = sum(
         [ cv2.cvtColor(i.astype(np.float32), cv2.COLOR_RGB2XYZ)[:,:,1] for i in img_tmo ]
-    )/len(img_tmo)
+    )/count
     img_tmo_boosted = sum(
         [ cv2.cvtColor(i.astype(np.float32), cv2.COLOR_RGB2XYZ)[:,:,1] for i in img_tmo_boosted ]
-    )/len(img_tmo_boosted)
+    )/count
     gt_img_hdr = cv2.cvtColor(gt_img_hdr.copy().astype(np.float32), cv2.COLOR_RGB2XYZ)[:,:,1]
 
     shape_inches = (shape[0]/float(dpi), shape[1]/float(dpi))
@@ -199,7 +203,6 @@ def plot_histogram_HDR(
 
 
 matches = load_match_list(FILE_MATCHES)
-
 for k, v in tqdm(matches.items()):
 
     img_ldr = []
@@ -228,7 +231,7 @@ for k, v in tqdm(matches.items()):
 
     images = []
     txt_thickness = 2
-    txt_color = (255,255,255)
+    txt_color = (1,1,1)
     for m in v:
         p_gn_ldr = os.path.join(PATH_panos_generated, 'ldr/ldr_'+m+'.png')
         img_gn_ldr = load_image(p_gn_ldr)
@@ -253,15 +256,15 @@ for k, v in tqdm(matches.items()):
         img_gn_hdr = cv2.putText(img_gn_hdr, m, (10, img_gn_hdr.shape[0]-10), cv2.FONT_HERSHEY_TRIPLEX, 1, txt_color, txt_thickness, cv2.FILLED)
         images.append(toTensor(img_gn_hdr))
 
-    img_gt_ldr = cv2.putText(img_gt_ldr, 'Ground Truth', (10, img_gt_ldr.shape[0]-10), cv2.FONT_HERSHEY_TRIPLEX, 1, txt_color, txt_thickness, cv2.FILLED)
+    img_gt_ldr = cv2.putText(img_gt_ldr, f'Ground Truth: {k}', (10, img_gt_ldr.shape[0]-10), cv2.FONT_HERSHEY_TRIPLEX, 1, txt_color, txt_thickness, cv2.FILLED)
     images.insert(0, toTensor(img_gt_ldr.copy()))
 
     if len(images) % 2 != 0:
         images.append(toTensor(np.ones_like(img_gt_ldr)))
 
     plot = plot_histogram_LDR(
-        img_ldr=img_ldr,
-        img_tmo=img_tmo,
+        img_ldr=img_ldr.copy(),
+        img_tmo=img_tmo.copy(),
         gt_img_ldr=tm_gamma(img_gt_hdr.copy(), 2.2),
         title="LDR Cumulative Intensity",
         shape=(img_gt_ldr.shape[1],img_gt_ldr.shape[0])
@@ -269,17 +272,19 @@ for k, v in tqdm(matches.items()):
     images.append(toTensor(plot))
 
     plot = plot_histogram_HDR(
-        img_tmo=img_tmo_hdr,
-        img_tmo_boosted=img_tmo_boosted,
-        gt_img_hdr=img_gt_hdr,
+        img_tmo=img_tmo_hdr.copy(),
+        img_tmo_boosted=img_tmo_boosted.copy(),
+        gt_img_hdr=img_gt_hdr.copy(),
         title="HDR Cumulative Intensity",
         shape=(img_gt_ldr.shape[1],img_gt_ldr.shape[0])
     )
     images.append(toTensor(plot))
+    # for i in images:
+    #     print(i.shape, i.min(), i.max())
 
     # Made image grid
     grid = make_grid(images, nrow=2)
-    print('grid', grid.shape)
+    # print('grid', grid.shape, grid.min(), grid.max())
 
     txt_color = (0,0,0)
     file_gt = f"run_2_matches_confirmed_grid/renders/{k} Panorama_hdr.png"
@@ -294,10 +299,11 @@ for k, v in tqdm(matches.items()):
     render_gn = cv2.putText(render_gn, v[0], (10, render_gn.shape[0]-10), cv2.FONT_HERSHEY_TRIPLEX, 1, txt_color, txt_thickness, cv2.FILLED)
     render_gn = toTensor(render_gn)
     render_grid = make_grid([render_gt, render_gn], nrow=2)
-    print('render_grid', render_grid.shape)
+    # print('render_grid', render_grid.shape, render_grid.min(), render_grid.max())
 
     grid = torch.cat([grid, render_grid], dim=1)
+    # print('grid', grid.shape, grid.min(), grid.max())
 
-    assert grid.min() >= 0.0 and grid.max() <= 255.0, \
+    assert grid.min() >= 0.0 and grid.max() <= 1.0, \
         f"Grid must be in range [0,1], got {grid.min()}, {grid.max()}"
     save_image(grid, os.path.join(PATH_output, k+'_matches.png'))

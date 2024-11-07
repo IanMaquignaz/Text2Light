@@ -18,7 +18,7 @@ from torchvision.utils import make_grid, save_image
 
 # Custom
 from tools import load_image, load_render
-from tools import match_shape
+from tools import match_shape, match_exposure
 from tools import tm_gamma, exposure
 # from tools import plot_histogram
 from envmap import EnvironmentMap
@@ -49,42 +49,19 @@ FILE_MATCHES="run_2_matches_confirmed.txt"
 matches = load_match_list(FILE_MATCHES)
 
 def get_skydome(img):
-    count = 4
     e = EnvironmentMap(img.copy(), 'latlong')
-    e = e.convertTo('skyangular', int(img.shape[1]/count))
+    e = e.convertTo('skyangular', img.shape[1])
     return e.data.copy()
 
 
-def match_exposure_(ref, a, trim):
-    assert ref.shape == a.shape, f"Shapes do not match: {ref.shape} != {a.shape}"
-    assert ref.ndim == 3 or ref.ndim==2, f"Only 2D and 3D tensors are supported"
-
-    if a.min() < 0:
-        a = a - a.min()
-    if ref.min() < 0:
-        ref = ref - ref.min()
-
-    if ref.ndim == 3:
-        assert trim < 0
-        a_mean = cv2.cvtColor(a[:trim,:,:].astype(np.float32), cv2.COLOR_RGB2XYZ)[:,:,1].mean()
-        ref_mean = cv2.cvtColor(ref[:trim,:,:].astype(np.float32), cv2.COLOR_RGB2XYZ)[:,:,1].mean()
-
-        # Get final Ratio
-        ratio = np.nan_to_num(
-            ref_mean / a_mean,
-            nan=float('nan'),
-            posinf=float('nan'),
-            neginf=float('nan')
-        )
-        ratio = np.nan_to_num(ratio, nan=1., posinf=1., neginf=1.)
-    else:
-        raise "Not implemented"
-
-    # Apply Ratio
-    a = (a * ratio)
-    return np.nan_to_num(a, nan=0., posinf=0., neginf=0.)
-
-
+txt_size=2
+txt_thickness = 2
+txt_max_lines = 3
+def get_text_width(txt):
+    (txt_width, _), _ = cv2.getTextSize(txt, cv2.FONT_HERSHEY_TRIPLEX, txt_size, txt_thickness)
+    return txt_width
+(txt_width, txt_height), baseline = cv2.getTextSize('AAA', cv2.FONT_HERSHEY_TRIPLEX, txt_size, txt_thickness)
+txt_color = (255,255,255)
 master_grid = []
 for k, v in tqdm(matches.items()):
     images = []
@@ -92,7 +69,7 @@ for k, v in tqdm(matches.items()):
     # Generated LDR
     p_gn_ldr = os.path.join(PATH_panos_generated, 'ldr/ldr_'+v[0]+'.png')
     img_gn_ldr = load_image(p_gn_ldr)
-    img_gn_ldr = match_exposure_(img_gn_ldr,img_gn_ldr, trim=trim)
+    img_gn_ldr = match_exposure(img_gn_ldr,img_gn_ldr, trim=trim)
 
     # Ground Truth HDR
     p_gt = os.path.join(PATH_panos_outdoor, k+' Panorama_hdr.exr')
@@ -100,20 +77,39 @@ for k, v in tqdm(matches.items()):
 
     # Match shape and exposure
     img_gt_hdr = match_shape(img_gn_ldr, img_gt_hdr)
-    img_gt_hdr = match_exposure_(img_gn_ldr.copy(), img_gt_hdr, trim=trim)
+    img_gt_hdr = match_exposure(img_gn_ldr.copy(), img_gt_hdr, trim=trim)
     img_gt_ldr = tm_gamma(img_gt_hdr.copy(), 2.2)
 
-    txt_size=0.5
-    txt_thickness = 1
-    txt_color = (255,255,255)
     max_duplicates=1
     for m in v:
         p_gn_hdr = os.path.join(PATH_panos_generated, 'hdr/hdr_SRiTMO_boosted_'+m+'.exr')
         img_gn_hdr = load_image(p_gn_hdr)
-        img_gn_hdr = match_exposure_(img_gt_hdr.copy(), img_gn_hdr, trim=trim)
+        img_gn_hdr = match_exposure(img_gt_hdr.copy(), img_gn_hdr, trim=trim)
         img_gn_hdr = get_skydome(img_gn_hdr)
         img_gn_ldr = tm_gamma(img_gn_hdr, 2.2)
-        img_gn_ldr = cv2.putText(img_gn_ldr, m, (10, img_gn_hdr.shape[0]-10), cv2.FONT_HERSHEY_TRIPLEX, txt_size, txt_color, txt_thickness, cv2.FILLED)
+        img_gn_ldr = cv2.copyMakeBorder(img_gn_ldr, baseline,(txt_height+baseline)*(txt_max_lines),0,0, cv2.BORDER_CONSTANT, 0)
+
+        m = m.replace('[', '').replace(']', '')
+        if get_text_width(m) > img_gn_ldr.shape[1]:
+            m_split = m.split(' ')
+            lines = []
+            while len(m_split) > 0:
+                m_line = ''
+                while len(m_split) > 0 and get_text_width(m_line+m_split[0]) < img_gn_ldr.shape[1]:
+                    m_line += m_split.pop(0) + ' '
+                lines.append(m_line)
+            for i, m_line in enumerate(lines):
+                img_gn_ldr = cv2.putText(
+                    img_gn_ldr, m_line,
+                    (10, img_gn_ldr.shape[0]-10 -((txt_height+baseline)*(len(lines)-1-i))),
+                    cv2.FONT_HERSHEY_TRIPLEX, txt_size, txt_color, txt_thickness, cv2.FILLED
+                )
+        else:
+            img_gn_ldr = cv2.putText(
+                img_gn_ldr, m,
+                (10, img_gn_ldr.shape[0]-10),
+                cv2.FONT_HERSHEY_TRIPLEX, txt_size, txt_color, txt_thickness, cv2.FILLED
+            )
 
         images.append(toTensor(img_gn_ldr))
         if len(images) == max_duplicates:
@@ -121,7 +117,8 @@ for k, v in tqdm(matches.items()):
 
     img_gt_hdr = get_skydome(img_gt_hdr)
     img_gt_ldr = tm_gamma(img_gt_hdr, 2.2)
-    img_gt_ldr = cv2.putText(img_gt_ldr, k, (10, img_gt_ldr.shape[0]-10), cv2.FONT_HERSHEY_TRIPLEX, txt_size, txt_color, txt_thickness, cv2.FILLED)
+    img_gt_ldr = cv2.copyMakeBorder(img_gt_ldr, baseline,(txt_height+baseline)*(txt_max_lines),0,0, cv2.BORDER_CONSTANT, 0)
+    img_gt_ldr = cv2.putText(img_gt_ldr, f"Ground Truth: {k}", (10, img_gt_ldr.shape[0]-10), cv2.FONT_HERSHEY_TRIPLEX, txt_size, txt_color, txt_thickness, cv2.FILLED)
     images.insert(0, toTensor(img_gt_ldr))
 
     # Pad (if needed)
@@ -133,7 +130,7 @@ for k, v in tqdm(matches.items()):
         f"Grid must be in range [0,1], got {grid.min()}, {grid.max()}"
     master_grid.append(grid.detach().clone())
 
-    # if len(master_grid) >=2:
+    # if len(master_grid) >=1:
     #     break
 
 final_grid = make_grid(master_grid, nrow=3, padding=2, pad_value=1)
